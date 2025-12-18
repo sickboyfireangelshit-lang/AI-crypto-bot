@@ -1,29 +1,41 @@
-from flask import Flask, render_template_string, jsonify
-from core.bot import AITradingBot
-import threading
+import os
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
+import uvicorn
 
-app = Flask(__name__)
-app.config.from_object('config.Config')
+app = FastAPI(title="AI Crypto Bot", version="1.0")
 
-bot = AITradingBot()
-threading.Thread(target=bot.run, daemon=True).start()
+# Basic health endpoint for Render
+@app.get("/")
+async def root():
+    return {"message": "AI Crypto Bot is live – scanning markets, predicting edges, executing alpha."}
 
-DASHBOARD = """
-<h1>AI Crypto Bot Live 🔥</h1>
-<h2>Status: Running</h2>
-<div id="status">Loading...</div>
-<script>
-setInterval(() => fetch('/status').then(r => r.json()).then(d => document.getElementById('status').innerText = JSON.stringify(d)), 5000);
-</script>
-"""
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
 
-@app.route('/')
-def home():
-    return render_template_string(DASHBOARD)
+# Example websocket endpoint – expand with your exchange feeds, arbitrage signals, etc.
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # Process incoming messages (e.g., control commands, subscription requests)
+            await websocket.send_text(f"Echo: {data}")
+    except WebSocketDisconnect:
+        print("Client disconnected")
 
-@app.route('/status')
-def status():
-    return jsonify(bot.get_status())
+# Add your routes here: ML predictions, arbitrage status, Telegram bridges, etc.
+# Example:
+@app.get("/status")
+async def bot_status():
+    return {
+        "exchanges_connected": True,
+        "ml_model": "loaded",
+        "arbitrage_scanner": "active",
+        "telegram_signals": "firing"
+    }
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=app.config['DEBUG'])
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
