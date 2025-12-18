@@ -1,11 +1,25 @@
-import.os
+import os
+import multiprocessing
 
-bind = ("PORT", "0.0.0.0:8000")  # Render's dynamic $PORT [web:10]
-workers = multiprocessing.cpu_count() * 2  # Scales to CPU cores [web:10]
-worker_class = "uvicorn.workers.UvicornWorker"  # Required for FastAPI ASGI [web:15][memory:2]
-timeout = 120                  # Handles long trading signal requests
-keepalive = 5                  # Efficient for API polling endpoints
-loglevel = "info"              # Production logging
-accesslog = "-"                # Stream to stdout for Render
-errorlog = "-"                 # Stream errors to stdout
+# Server socket
+bind = "0.0.0.0:" + os.getenv("PORT", "8000")
+workers = multiprocessing.cpu_count() * 2 + 1
+worker_class = "uvicorn.workers.UvicornWorker"
+worker_connections = 1000
+max_requests = 1000
+max_requests_jitter = 100
 
+# Logging
+accesslog = "-"
+errorlog = "-"
+loglevel = "info"
+
+# Timeouts
+timeout = 120
+keepalive = 5
+
+# Process naming
+proc_name = "ai-crypto-bot"
+
+# Reload for development (disable in prod if needed)
+reload = False
