@@ -44,3 +44,13 @@ from config import Config
 class RiskManager:
     def position_size(self, balance):
         return balance * Config.RISK_PER_TRADE
+from config import Config
+
+class Portfolio:
+    def __init__(self):
+        self.balance = Config.INITIAL_CAPITAL
+        self.pnl = 0.0
+
+    def update_pnl(self):
+        # Placeholder – integrate real balance fetch
+        pass
