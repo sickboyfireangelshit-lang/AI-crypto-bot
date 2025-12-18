@@ -1,1 +1,6 @@
+TIERS = {'free': 1, 'pro': 10, 'enterprise': 100},
+import requests
 
+def verify_license(key, product_id):
+    # Call Gumroad API
+    pass,
