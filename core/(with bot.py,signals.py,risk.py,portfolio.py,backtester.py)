@@ -91,4 +91,16 @@ class ExchangeAdapter:
 
     def place_order(self, signal, amount):
         # Simplified – add real order logic
-        print(f"Placing {signal} order for {amount}")
+        print(f"Placing {signal} order for {amount}"),
+import pandas_ta as ta
+
+def get_signal(df):
+    df.ta.rsi(append=True)
+    df.ta.macd(append=True)
+    df.ta.bbands(append=True)
+    
+    if df['RSI_14'].iloc[-1] < 30 and df['MACD_12_26_9'].iloc[-1] > df['MACDs_12_26_9'].iloc[-1] and df['close'].iloc[-1] < df['BBL_5_2.0'].iloc[-1]:
+        return 'buy'
+    if df['RSI_14'].iloc[-1] > 70 and df['MACD_12_26_9'].iloc[-1] < df['MACDs_12_26_9'].iloc[-1] and df['close'].iloc[-1] > df['BBU_5_2.0'].iloc[-1]:
+        return 'sell'
+    return None
