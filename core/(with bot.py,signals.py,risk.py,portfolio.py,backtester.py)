@@ -39,3 +39,8 @@ def get_signal(df: pd.DataFrame):
     if df['rsi'].iloc[-1] > 70:
         return 'sell'
     return None
+from config import Config
+
+class RiskManager:
+    def position_size(self, balance):
+        return balance * Config.RISK_PER_TRADE
