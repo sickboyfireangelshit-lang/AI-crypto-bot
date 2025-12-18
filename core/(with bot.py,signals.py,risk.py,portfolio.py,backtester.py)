@@ -1,1 +1,31 @@
+import time
+from data.exchange import ExchangeAdapter
+from core.signals import get_signal
+from core.risk import RiskManager
+from core.portfolio import Portfolio
+from analytics.logger import logger
 
+class AITradingBot:
+    def __init__(self):
+        self.exchange = ExchangeAdapter('binance')
+        self.risk = RiskManager()
+        self.portfolio = Portfolio()
+        self.running = True
+
+    def run(self):
+        logger.info("Bot started – hunting profits")
+        while self.running:
+            try:
+                data = self.exchange.fetch_ohlcv('BTC/USDT', '1h')
+                signal = get_signal(data)
+                if signal:
+                    size = self.risk.position_size(self.portfolio.balance)
+                    self.exchange.place_order(signal, size)
+                    self.portfolio.update_pnl()
+                    logger.info(f"Executed {signal} – size {size}")
+            except Exception as e:
+                logger.error(f"Error: {e}")
+            time.sleep(60)  # Check every minute
+
+    def get_status(self):
+        return {"balance": self.portfolio.balance, "pnl": self.portfolio.pnl}
