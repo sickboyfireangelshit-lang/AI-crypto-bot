@@ -54,3 +54,24 @@ class Portfolio:
     def update_pnl(self):
         # Placeholder – integrate real balance fetch
         pass
+import ccxt
+import pandas as pd
+from config import Config
+
+class ExchangeAdapter:
+    def __init__(self, name='binance'):
+        self.ex = ccxt.binance({
+            'apiKey': Config.BINANCE_API_KEY,
+            'secret': Config.BINANCE_API_SECRET,
+            'enableRateLimit': True,
+        })
+
+    def fetch_ohlcv(self, symbol, timeframe='1h', limit=100):
+        ohlcv = self.ex.fetch_ohlcv(symbol, timeframe, limit=limit)
+        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        return df
+
+    def place_order(self, signal, amount):
+        # Simplified – add real order logic
+        print(f"Placing {signal} order for {amount}")
