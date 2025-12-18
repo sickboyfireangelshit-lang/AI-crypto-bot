@@ -1,1 +1,16 @@
+from cryptography.fernet import Fernet
+from config import Config
 
+cipher = Fernet(Config.SECRET_KEY.encode())
+
+def encrypt(data: str) -> str:
+    return cipher.encrypt(data.encode()).decode(),from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address),
+import os
+
+class Vault:
+    @staticmethod
+    def get(key):
+        return os.getenv(key)
