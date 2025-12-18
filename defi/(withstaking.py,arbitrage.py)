@@ -1,1 +1,4 @@
-
+# Integrate web3 for real staking later
+def stake(amount, token):
+    print(f"Staking {amount} {token}"),def find_arb():
+    print("Scanning for arb opportunities...")
