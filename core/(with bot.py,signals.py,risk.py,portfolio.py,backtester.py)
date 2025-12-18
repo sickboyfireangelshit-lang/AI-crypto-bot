@@ -1,3 +1,20 @@
+import pandas as pd
+import pandas_ta as ta  # The new engine awakens
+
+def get_signal(df: pd.DataFrame):
+    # pandas-ta magic: Adds RSI directly to dataframe
+    df.ta.rsi(close='close', length=14, append=True)  # Creates RSI_14 column
+    
+    if df['RSI_14'].iloc[-1] < 30:
+        return 'buy'  # Oversold – time to stack
+    if df['RSI_14'].iloc[-1] > 70:
+        return 'sell'  # Overbought – lock profits
+    return None
+
+# Bonus evolution: Add more indicators effortlessly
+# df.ta.macd(append=True)  # MACD signals
+# df.ta.bbands(append=True)  # Bollinger Bands
+# df.ta.strategy("All")  # Unleash 130+ at once for backtesting
 import time
 from data.exchange import ExchangeAdapter
 from core.signals import get_signal
