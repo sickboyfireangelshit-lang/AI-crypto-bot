@@ -29,3 +29,13 @@ class AITradingBot:
 
     def get_status(self):
         return {"balance": self.portfolio.balance, "pnl": self.portfolio.pnl}
+import pandas as pd
+import talib
+
+def get_signal(df: pd.DataFrame):
+    df['rsi'] = talib.RSI(df['close'])
+    if df['rsi'].iloc[-1] < 30:
+        return 'buy'
+    if df['rsi'].iloc[-1] > 70:
+        return 'sell'
+    return None
