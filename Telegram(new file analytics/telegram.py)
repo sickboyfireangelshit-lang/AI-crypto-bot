@@ -1,0 +1,7 @@
+import telegram
+from config import Config
+
+bot = telegram.Bot(token=Config.TELEGRAM_TOKEN)
+
+def send_alert(message):
+    bot.send_message(chat_id=Config.TELEGRAM_CHAT_ID, text=message)
