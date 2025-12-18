@@ -1,1 +1,5 @@
-
+# Future live feed – use ccxt.pro for real websockets
+pass
+# Integrate web3 for real staking later
+def stake(amount, token):
+    print(f"Staking {amount} {token}")
