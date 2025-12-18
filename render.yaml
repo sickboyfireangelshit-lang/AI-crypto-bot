@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-crypto-bot
+    env: python
+    region: oregon  # or your preferred region
+    plan: free      # or starter/pro as needed
+    buildCommand: pip install --upgrade pip wheel setuptools && pip install -r requirements.txt
+    startCommand: gunicorn main:app -c gunicorn.conf.py  # adjust if your entrypoint differs
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9  # locks in a solid version with excellent wheels
