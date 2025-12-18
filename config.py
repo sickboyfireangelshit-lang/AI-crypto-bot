@@ -11,3 +11,7 @@ class Config:
     RISK_PER_TRADE = float(os.getenv('RISK_PER_TRADE', 0.02))  # 2%
     INITIAL_CAPITAL = float(os.getenv('INITIAL_CAPITAL', 10000))
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+BINANCE_API_KEY=your_key_here
+BINANCE_API_SECRET=your_secret_here
+SECRET_KEY=super_strong_secret
+DEBUG=True
