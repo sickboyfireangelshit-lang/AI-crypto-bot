@@ -1,16 +1,10 @@
-import os
 import multiprocessing
 
-bind = f"0.0.0.0:{os.getenv('PORT', '8000')}"
+bind = "0.0.0.0:8000"
 workers = multiprocessing.cpu_count() * 2 + 1
-worker_class = "uvicorn.workers.UvicornWorker"
-worker_connections = 1000
-max_requests = 1000
-max_requests_jitter = 100
-timeout = 120
-keepalive = 5
+timeout = 300                  # Long grace for ML/backtests
+graceful_timeout = 300        # Smooth shutdown
+keepalive = 10                # Persistent life
+preload_app = True            # Load app before workers – faster restarts
+worker_connections = 1000     # If using gevent/async
 loglevel = "info"
-accesslog = "-"
-errorlog = "-"
-proc_name = "ai-crypto-bot"
-reload = False
