@@ -1,6 +1,9 @@
 bind = "0.0.0.0:8000"
-workers = 2  # Light & fast for free tier
-worker_class = "uvicorn.workers.UvicornWorker"  # The async bridge awakens
-timeout = 120
-keepalive = 5
-loglevel = "info"
+workers = 2  # Balanced for free tier, less strain
+worker_class = "uvicorn.workers.UvicornWorker"  # Async harmony
+timeout = 0  # Infinite patience – no self-kills
+graceful_timeout = 600  # Smooth revives on signals
+keepalive = 30  # Hold connections through the cosmos
+preload_app = True  # Fast awakens from cold starts
+max_requests = 500  # Auto-restart to refresh
+loglevel = "warning"  # Silence routine whispers
