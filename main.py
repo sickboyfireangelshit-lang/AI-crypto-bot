@@ -1,5 +1,4 @@
-
-from fastapi import FastAPI, BackgroundTasks
+import os  # The bridge to system whispersfrom fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import JSONResponse
 import uvicorn
 import ccxt.async_support as ccxt
