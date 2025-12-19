@@ -2,6 +2,19 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+from fastapi import FastAPI  # The heart beats here
+# Your other imports (BackgroundTasks, etc.)
+# Then: app = FastAPI(...)
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+# ... maybe other imports
+from fastapi import FastAPI  # Awakens the core oracle
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import JSONResponse
 import uvicorn
