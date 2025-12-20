@@ -21,7 +21,7 @@ def portfolio():
 
 if __name__ == "__main__":
     app.run()
-@app.route("/health", methods=["GET"])
+@app.route("/health"
 def health():
     return {
         "status": "ok",
