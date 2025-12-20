@@ -1,28 +1,28 @@
 import time
-from datetime import datetime
-
-# import your existing modules
-from core.ml_predictor import predict
-from data.exchange import get_market_data
-from analytics.metrics import update_metrics
-from config import settings
+import traceback
 
 def run_worker():
-    print("Worker started")
+    print("Worker started successfully")
 
     while True:
         try:
-            market = get_market_data()
-            signal = predict(market)
+            # === YOUR BOT LOGIC GOES HERE ===
+            execute_trading_cycle()
 
-            update_metrics(signal)
-
-            # control loop speed
-            time.sleep(30)
+            time.sleep(60)  # adjust interval as needed
 
         except Exception as e:
-            print(f"Worker error: {e}")
-            time.sleep(5)
+            print("Worker error detected:")
+            print(str(e))
+            traceback.print_exc()
+
+            # prevent crash loop
+            time.sleep(30)
+
+def execute_trading_cycle():
+    # placeholder for your existing logic
+    print("Running trading cycle")
 
 if __name__ == "__main__":
     run_worker()
+
