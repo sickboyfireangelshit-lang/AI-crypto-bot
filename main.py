@@ -38,12 +38,10 @@ def trade():
     Example POST endpoint
     """
     data = request.json or {}
-    # You can process trading data here
+    # Here you can process trading data
     return {"status": "trade accepted", "received": data}, 200
 
 
 # =========================
-# Gunicorn deployment
-# =========================
-# Do NOT call app.run() — Render uses Gunicorn
-# Start command on Render: gunicorn main:app
+# Do NOT call app.run()
+# Gunicorn will run this app
