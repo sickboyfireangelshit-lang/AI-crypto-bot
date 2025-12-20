@@ -1,31 +1,34 @@
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from datetime import datetime
 
 app = Flask(__name__)
 
-@app.route("/health")
-def health():
-    return jsonify({
-        "name": "AI Crypto Trading Bot",
-        "status": "LIVE",
-        "timestamp": datetime.utcnow().isoformat()
-    })
-
-@app.route("/signal")
-def signal():
-    return jsonify({"signal": "dynamic from analytics"})
-
-@app.route("/portfolio")
-def portfolio():
-    return jsonify({"status": "tracked in worker"})
-
-if __name__ == "__main__":
-    app.run()
-@app.route("/health"
-def health():
+# =========================
+# HEALTH CHECK (ONLY ONE)
+# =========================
+@app.route("/health", methods=["GET"])
+def api_health():
     return {
         "status": "ok",
         "service": "crypto-api",
         "timestamp": datetime.utcnow().isoformat()
-    }
+    }, 200
 
+
+# =========================
+# ROOT (OPTIONAL)
+# =========================
+@app.route("/", methods=["GET"])
+def root():
+    return {"message": "API running"}, 200
+
+
+# =========================
+# PROTECTED ENDPOINT EXAMPLE
+# =========================
+@app.route("/trade", methods=["POST"])
+def trade():
+    return {"status": "trade accepted"}, 200
+
+
+# DO NOT define app.run() for Gunicorn
