@@ -27,7 +27,5 @@ def health():
         "status": "ok",
         "service": "crypto-api",
         "timestamp": datetime.utcnow().isoformat()
-    }, 200
-git add main.py
-git commit -m "Fix duplicate health endpoint causing Flask startup crash"
-git push
+    }
+
