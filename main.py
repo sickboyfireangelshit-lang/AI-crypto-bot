@@ -21,3 +21,10 @@ def portfolio():
 
 if __name__ == "__main__":
     app.run()
+@app.route("/health", methods=["GET"])
+def health():
+    return {
+        "status": "ok",
+        "service": "crypto-api",
+        "timestamp": datetime.utcnow().isoformat()
+    }, 200
