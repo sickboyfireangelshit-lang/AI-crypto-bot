@@ -6,8 +6,11 @@ app = Flask(__name__)
 # =========================
 # HEALTH CHECK (ONLY ONE)
 # =========================
-@app.route("/health", methods=["GET"])
+@app.route("/health", methods=["GET"], endpoint="api_health_check")
 def api_health():
+    """
+    Health check endpoint
+    """
     return {
         "status": "ok",
         "service": "crypto-api",
@@ -16,19 +19,31 @@ def api_health():
 
 
 # =========================
-# ROOT (OPTIONAL)
+# ROOT ENDPOINT
 # =========================
 @app.route("/", methods=["GET"])
 def root():
+    """
+    Root endpoint to confirm API is running
+    """
     return {"message": "API running"}, 200
 
 
 # =========================
-# PROTECTED ENDPOINT EXAMPLE
+# PROTECTED TRADE ENDPOINT EXAMPLE
 # =========================
 @app.route("/trade", methods=["POST"])
 def trade():
-    return {"status": "trade accepted"}, 200
+    """
+    Example POST endpoint
+    """
+    data = request.json or {}
+    # You can process trading data here
+    return {"status": "trade accepted", "received": data}, 200
 
 
-# DO NOT define app.run() for Gunicorn
+# =========================
+# Gunicorn deployment
+# =========================
+# Do NOT call app.run() — Render uses Gunicorn
+# Start command on Render: gunicorn main:app
