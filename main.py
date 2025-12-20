@@ -1,7 +1,6 @@
-from flask import Flask, request, jsonify
-from datetime import datetime
+from fastapi import FastAPI  # Only this – no from flask import Flask
 
-app = Flask(__name__)
+app = FastAPI(title="AI Crypto Oracle – Autonomous Swarm 2025 🔥")
 
 # =========================
 # HEALTH CHECK (ONLY ONE)
