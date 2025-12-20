@@ -118,7 +118,7 @@ async def startup_event():
     # Start background swarm task (best-effort on Render Free)
     asyncio.create_task(background_trading_swarm())
 
-@app.get("/", response_class=HTMLResponse)
+@app.route('/', methods=['GET', 'HEAD']) response_class=HTMLResponse)
 async def root():
     return """
     <html>
