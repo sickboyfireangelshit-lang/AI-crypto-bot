@@ -216,33 +216,20 @@ async def background_trading_swarm():
         except Exception as e:
             _log(f"Swarm error: {e}")
             await asyncio.sleep(60)
-from ml.predictor import MLPredictor
-from core.portfolio import Portfolio
-from analytics.logger import AnalyticsLogger
-import ccxt.async_support as ccxt
-from telegram import Bot
-import asyncio
-
-class CryptoSwarm:
-    def __init__(self):
-        self.predictor = MLPredictor()
-        self.portfolio = Portfolio(initial_balance=10000)
-        self.logger = AnalyticsLogger()
-        self.exchanges = {'binance': ccxt.binance({'enableRateLimit': True})}
-        self.tg_bot = Bot(token=os.getenv('TELEGRAM_BOT_TOKEN'))
-        self.chat_id = os.getenv('TELEGRAM_CHAT_ID')
-
-    async def run(self):
-        while True:
-            for symbol in ['BTC/USDT', 'ETH/USDT']:
-                pred = self.predictor.predict_next_close(symbol)
-                if pred:
-                    action = 'buy' if pred > current_price(symbol) * 1.01 else 'sell'
-                    self.portfolio.execute_trade(symbol, action, amount=0.01)
-                    await self.tg_bot.send_message(self.chat_id, f"{symbol} {action.upper()}: Pred ${pred:.2f}")
-                    self.logger.log_trade(symbol, action, pred)
-            await asyncio.sleep(900)  # 15 min
-
-# In startup:
-swarm = CryptoSwarm()
-asyncio.run(swarm.run())
+try:
+    from ml.predictor import MLPredictor
+    ML_PREDICTOR_AVAILABLE = True
+except ImportError as e:
+    print(f"[WARN] ML predictor not available: {e}")
+    ML_PREDICTOR_AVAILABLE = False
+    
+    # Create a dummy MLPredictor class
+    class MLPredictor:
+        def __init__(self):
+            pass
+        
+        def predict(self, *args, **kwargs):
+            return None
+        
+        def train(self, *args, **kwargs):
+            pass
