@@ -302,3 +302,122 @@ async def background_monitor():
             await asyncio.sleep(60)
         except Exception as e:
             logger.error(f"Monitor error: {e}")
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
+import uvicorn
+import ccxt.async_support as ccxt
+import asyncio
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from utils.telegram_alerts import send_alert, send_startup_alert
+from core.ml_predictor import get_ml_signal
+from core.portfolio import Portfolio
+from analytics.logger import logger
+
+app = FastAPI(title="AI Crypto Oracle – Resilient Swarm 2025 🔥")
+
+exchange = ccxt.binance({
+    'apiKey': os.getenv('BINANCE_API_KEY'),
+    'secret': os.getenv('BINANCE_API_SECRET'),
+    'enableRateLimit': True,
+})
+
+portfolio = Portfolio()
+
+@app.on_event("startup")
+async def startup_event():
+    await send_startup_alert()
+    asyncio.create_task(background_trading_swarm())
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error(f"Uncaught exception: {exc}")
+    await send_alert(f"⚠️ Oracle Resilience Activated\nError caught: {exc}\nContinuing operations")
+    return JSONResponse(status_code=500, content={"detail": "Oracle resilient – empire continues 🔥"})
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    try:
+        return """
+        <html>
+            <head><title>AI Crypto Oracle 2025</title></head>
+            <body style="background:#000;color:#0f0;font-family:monospace;text-align:center;padding:100px;">
+                <h1>🤖 AI CRYPTO ORACLE – LIVE & RESILIENT</h1>
+                <h2>Autonomous Swarm Active • Predicting • Trading • Conquering</h2>
+                <p><a href="/docs">Docs</a> • <a href="/charts">Charts</a> • <a href="/health">Health</a></p>
+                <p>The empire self-heals and compounds eternal 🔥</p>
+            </body>
+        </html>
+        """
+    except Exception as e:
+        logger.error(f"Root endpoint error: {e}")
+        raise HTTPException(status_code=500, detail="Oracle resilient – recovering")
+
+@app.get("/health")
+async def health():
+    try:
+        balance = await exchange.fetch_balance()
+        return {"status": "Oracle Alive & Resilient", "balance": balance['total']}
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        await send_alert(f"⚠️ Health check error: {e}\nOracle recovering")
+        return {"status": "Resilient – recovering from error", "error": str(e)}
+
+@app.get("/signal")
+async def signal(symbol: str = 'BTC/USDT'):
+    try:
+        df = await exchange.fetch_ohlcv(symbol, '1h', limit=100)
+        df = pd.DataFrame(df, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        prediction = get_ml_signal(df)
+        await send_alert(f"<b>🧠 PROPHECY</b>\n{prediction.upper()} on {symbol}")
+        return {"signal": prediction, "symbol": symbol}
+    except ccxt.NetworkError as e:
+        logger.warning(f"Network error on signal: {e} – retrying")
+        await asyncio.sleep(10)
+        return await signal(symbol)  # Retry
+    except Exception as e:
+        logger.error(f"Signal error: {e}")
+        await send_alert(f"❌ Signal failed: {e}\nFallback to hold")
+        return {"signal": "hold", "error": str(e), "reason": "resilience"}
+
+@app.get("/test-trade")
+async def test_background_trade(background_tasks: BackgroundTasks):
+    try:
+        background_tasks.add_task(execute_background_trade, "BTC/USDT", "buy", 0.001)
+        return {"status": "Test trade launched – resilience active"}
+    except Exception as e:
+        logger.error(f"Test trade launch error: {e}")
+        raise HTTPException(status_code=500, detail=f"Launch failed – resilience engaged: {e}")
+
+async def execute_background_trade(symbol: str, signal: str, amount: float):
+    try:
+        logger.info(f"Executing background trade: {signal.upper()} {amount} {symbol}")
+        # order = await exchange.create_market_order(symbol, signal, amount)  # Uncomment for real
+        await send_alert(f"<b>✅ BACKGROUND TRADE</b>\n{signal.upper()} {amount} {symbol}\nEmpire compounding")
+    except ccxt.InsufficientFunds as e:
+        await send_alert(f"⚠️ Insufficient funds: {e}\nTrade blocked – resilience")
+    except ccxt.RateLimitExceeded as e:
+        logger.warning("Rate limit – sleeping 60s")
+        await asyncio.sleep(60)
+        await execute_background_trade(symbol, signal, amount)  # Retry
+    except Exception as e:
+        logger.error(f"Background trade failed: {e}")
+        await send_alert(f"❌ Background trade error: {e}\nOracle recovering")
+
+async def background_trading_swarm():
+    while True:
+        try:
+            await signal()  # Or full logic
+            await asyncio.sleep(3600)
+        except Exception as e:
+            logger.error(f"Swarm crash: {e} – restarting in 60s")
+            await send_alert(f"⚠️ Swarm error: {e}\nSelf-healing in 60s")
+            await asyncio.sleep(60)  # Self-heal loop
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
