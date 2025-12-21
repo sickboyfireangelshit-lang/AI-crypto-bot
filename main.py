@@ -233,3 +233,21 @@ except ImportError as e:
         
         def train(self, *args, **kwargs):
             pass
+@app.get("/", response_class=HTMLResponse)
+async def root():  # Async harmony – accepts scope implicitly
+    return """
+    <html>
+        <head><title>AI Crypto Oracle 2025</title></head>
+        <body style="background:#000;color:#0f0;font-family:monospace;text-align:center;padding:100px;">
+            <h1>🤖 AI CRYPTO ORACLE – LIVE</h1>
+            <h2>Autonomous Swarm Active • Predicting • Trading • Conquering</h2>
+            <p>
+                <a href="/docs" style="color:#0f0;">Interactive Docs</a> • 
+                <a href="/redoc" style="color:#0f0;">ReDoc</a> • 
+                <a href="/charts" style="color:#0f0;">Profit Charts</a> • 
+                <a href="/health" style="color:#0f0;">Health</a>
+            </p>
+            <p>The empire compounds while you watch 🔥</p>
+        </body>
+    </html>
+    """
