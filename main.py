@@ -251,3 +251,54 @@ async def root():  # Async harmony – accepts scope implicitly
         </body>
     </html>
     """
+from fastapi import FastAPI, BackgroundTasks
+import asyncio
+from celery import Celery  # Optional heavy swarm (add to requirements.txt: celery redis)
+
+app = FastAPI(title="AI Crypto Oracle – Autonomous Swarm 2025 🔥")
+
+# Native FastAPI BackgroundTasks – Instant, lightweight
+def background_trade_task(symbol: str, signal: str, amount: float):
+    # Heavy logic: execute trade, update portfolio, log
+    print(f"Background trade executed: {signal} {amount} {symbol}")
+    # Real: await exchange.create_order(...)
+    # Notify: await send_alert(f"Background trade: {signal.upper()} executed!")
+
+@app.post("/trigger-trade")
+async def trigger_trade(background_tasks: BackgroundTasks):
+    background_tasks.add_task(background_trade_task, "BTC/USDT", "buy", 0.001)
+    return {"status": "Trade launched in background – empire compounding"}
+
+# Celery Heavy Swarm – For scheduled, resilient agents (Redis broker)
+celery = Celery(__name__, broker='redis://')  # Add Redis URL in env
+
+@celery.task
+def hourly_ml_retrain():
+    # Heavy ML retrain logic
+    print("ML model retrained – prophecy sharpened")
+
+@celery.task
+def defi_yield_scan():
+    # Scan staking/arbitrage opportunities
+    print("DeFi yields compounded")
+
+# Scheduled swarm (Celery beat – separate process)
+from celery.schedules import crontab
+celery.conf.beat_schedule = {
+    'retrain-every-hour': {'task': 'main.hourly_ml_retrain', 'schedule': crontab(minute=0)},
+    'yield-scan-every-30min': {'task': 'main.defi_yield_scan', 'schedule': crontab(minute='*/30')},
+}
+
+# Startup swarm launch
+@app.on_event("startup")
+async def launch_swarm():
+    asyncio.create_task(background_monitor())  # Native loop
+    # Celery workers run separately: celery -A main.celery worker
+
+async def background_monitor():
+    while True:
+        try:
+            # Live monitoring, alerts, health
+            await asyncio.sleep(60)
+        except Exception as e:
+            logger.error(f"Monitor error: {e}")
