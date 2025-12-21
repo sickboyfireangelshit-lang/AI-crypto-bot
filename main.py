@@ -224,3 +224,12 @@ async def background_trading_swarm():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)), reload=True)
+exchange = ccxt.binance({
+    "apiKey": os.getenv("BINANCE_API_KEY"),
+    "secret": os.getenv("BINANCE_API_SECRET"),
+    "enableRateLimit": True,
+    'proxies': {
+        'http': 'http://your_proxy_ip:port',
+        'https': 'https://your_proxy_ip:port',
+    }
+})
