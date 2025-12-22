@@ -1,6 +1,87 @@
-def sharpe(returns):
-    return returns.mean() / returns.std() * (252 ** 0.5)import logging
+import logging
+from typing import Union, Optional
+import numpy as np
+import pandas as pd
+
+# Assuming config.py exists with LOG_LEVEL = logging.INFO or similar
 from config import Config
 
 logging.basicConfig(level=Config.LOG_LEVEL)
 logger = logging.getLogger(__name__)
+
+Number = Union[int, float]
+ReturnsInput = Union[pd.Series, np.ndarray, list]
+
+
+def sharpe_ratio(
+    returns: ReturnsInput,
+    risk_free_rate: Number = 0.0,
+    period_per_year: int = 252,
+    annualize: bool = True
+) -> float:
+    """
+    Calculate the (annualized) Sharpe ratio of a return series.
+
+    Parameters
+    ----------
+    returns : pd.Series, np.ndarray, or list
+        Sequence of periodic returns (e.g., daily). Should be arithmetic returns.
+    risk_free_rate : float, default 0.0
+        Risk-free rate. If provided as annual rate, it will be de-annualized automatically.
+        If daily rate, set annualize=False or adjust accordingly.
+    period_per_year : int, default 252
+        Number of periods in a year (252 for daily, 12 for monthly, etc.).
+    annualize : bool, default True
+        If True, annualize both mean excess return and volatility.
+
+    Returns
+    -------
+    float
+        Sharpe ratio. Returns np.nan if std == 0 or input is empty.
+
+    Notes
+    -----
+    - Uses population standard deviation (ddof=0) for consistency with most finance libraries
+      when sample size is large (common practice in industry).
+    - Some sources use sample std (ddof=1); difference is negligible for long series.
+    """
+    # Convert to pandas Series for unified handling
+    if not isinstance(returns, pd.Series):
+        returns_series = pd.Series(returns)
+    else:
+        returns_series = returns.copy()
+
+    if returns_series.empty:
+        logger.warning("Empty returns series provided to sharpe_ratio")
+        return np.nan
+
+    # Clean data: remove NaNs
+    returns_series = returns_series.dropna()
+    if returns_series.empty:
+        logger.warning("All returns are NaN")
+        return np.nan
+
+    # Convert risk-free rate to periodic (e.g., daily)
+    if annualize and risk_free_rate != 0:
+        periodic_rf = risk_free_rate / period_per_year
+    else:
+        periodic_rf = risk_free_rate
+
+    excess_returns = returns_series - periodic_rf
+
+    mean_excess = excess_returns.mean()
+    std_excess = excess_returns.std(ddof=0)  # population std for large samples
+
+    if std_excess == 0:
+        logger.debug("Standard deviation of excess returns is zero")
+        return np.nan
+
+    sharpe = mean_excess / std_excess
+
+    if annualize:
+        sharpe *= np.sqrt(period_per_year)
+
+    logger.debug(f"Sharpe ratio calculated: {sharpe:.4f} "
+                 f"(mean={mean_excess:.6f}, std={std_excess:.6f}, periods={period_per_year})")
+
+    return float(sharpe)
