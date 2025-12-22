@@ -266,3 +266,7 @@ try:
 except Exception:
     analytics_logger = None  # Stub to avoid NameError downstream
     print("[INFO] Analytics logger disabled")
+try:
+    from core.flash_arb import detect_cex_dex_spread, execute_flash_arb
+except Exception:
+    detect_cex_dex_spread = execute_flash_arb = None
