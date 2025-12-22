@@ -233,7 +233,7 @@ exchange = ccxt.binance({
         'https': 'https://your_proxy_ip:port',
     }
 })
-exchange = ccxt.binanceus({...})  # Same config, US-compliant endpoint
+exchange = ccxt.binanceus() # Same config, US-compliant endpoint
 # main.py – Critical section fix (around line 236)
 import ccxt
 import os  # Recommended for prod
