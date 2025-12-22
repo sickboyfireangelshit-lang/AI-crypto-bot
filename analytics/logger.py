@@ -147,7 +147,7 @@ class _AnalyticsLoggerSingleton:
         if cls._instance is None:
             cls._instance = AnalyticsLogger(persist_path=persist_path, **kwargs)
         return cls._instance
-
+analytics_logger(persist_path="data/analytics_$(date +%Y%m%d).jsonl")
 
 # Alias for convenience in small projects
 analytics_logger = _AnalyticsLoggerSingleton.get_instance
