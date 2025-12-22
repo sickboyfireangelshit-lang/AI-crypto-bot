@@ -234,3 +234,35 @@ exchange = ccxt.binance({
     }
 })
 exchange = ccxt.binanceus({...})  # Same config, US-compliant endpoint
+# main.py – Critical section fix (around line 236)
+import ccxt
+import os  # Recommended for prod
+
+# BEST PRACTICE: Load from environment (never hardcode keys)
+config = {
+    'apiKey': os.getenv('BINANCEUS_API_KEY', ''),
+    'secret': os.getenv('BINANCEUS_SECRET', ''),
+    'enableRateLimit': True,
+    'options': {
+        'defaultType': 'future',  # or 'spot' as needed
+    },
+    # Add aiohttp_trust_env if proxy needed
+    # 'aiohttp_trust_env': True,
+}
+
+# If testing/local fallback
+# config = {}  # EMPTY DICT, not set
+
+exchange = ccxt.binanceus(config)  # Now valid dict → no AttributeError
+
+# Optional: Graceful handling for warnings
+try:
+    from data.exchange import some_ml_component  # Your ML predictor
+except ImportError:
+    print("[INFO] ML predictor disabled (module not available)")
+
+try:
+    from analytics import logger as analytics_logger
+except Exception:
+    analytics_logger = None  # Stub to avoid NameError downstream
+    print("[INFO] Analytics logger disabled")
