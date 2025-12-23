@@ -274,3 +274,306 @@ except Exception:
 def health_check():
     """Health check endpoint for Render"""
     return {'status': 'ok', 'message': 'Oracle is running'}, 200
+"""
+Oracle Trading Bot - Main Application
+FastAPI-based trading system with ML predictions
+"""
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import logging
+import os
+from datetime import datetime
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(title="Oracle Trading Bot", version="1.0.0")
+
+# Optional imports with fallbacks
+try:
+    from utils.telegram_alerts import send_alert
+    TELEGRAM_AVAILABLE = True
+    logger.info("✓ Telegram alerts loaded")
+except ImportError as e:
+    TELEGRAM_AVAILABLE = False
+    logger.warning(f"[WARN] Telegram alerts not available: {e}")
+    def send_alert(message): pass
+
+try:
+    from ml.predictor import MLPredictor
+    predictor = MLPredictor()
+    ML_AVAILABLE = True
+    logger.info("✓ ML predictor loaded")
+except ImportError as e:
+    predictor = None
+    ML_AVAILABLE = False
+    logger.warning(f"[WARN] ML predictor not available: {e}")
+
+try:
+    from analytics.logger import analytics_logger
+    ANALYTICS_AVAILABLE = True
+    logger.info("✓ Analytics logger loaded")
+except ImportError as e:
+    ANALYTICS_AVAILABLE = False
+    logger.warning(f"[WARN] analytics.logger not available: {e}")
+    class DummyLogger:
+        def log_event(self, *args, **kwargs): pass
+        def log_trade(self, *args, **kwargs): pass
+        def log_signal(self, *args, **kwargs): pass
+    analytics_logger = DummyLogger()
+
+try:
+    from core.portfolio import Portfolio
+    portfolio = Portfolio()
+    PORTFOLIO_AVAILABLE = True
+    logger.info("✓ Portfolio manager loaded")
+except ImportError as e:
+    portfolio = None
+    PORTFOLIO_AVAILABLE = False
+    logger.warning(f"[WARN] Portfolio manager not available: {e}")
+
+try:
+    from security.flash_loan_protection import FlashLoanProtector
+    flash_loan_protector = FlashLoanProtector()
+    PROTECTION_AVAILABLE = True
+    logger.info("✓ Flash loan protection loaded")
+except ImportError as e:
+    flash_loan_protector = None
+    PROTECTION_AVAILABLE = False
+    logger.warning(f"[WARN] Flash loan protection not available: {e}")
+
+
+# ============================================================================
+# HEALTH CHECK ENDPOINTS - FIXED FOR FASTAPI
+# ============================================================================
+
+@app.get('/')
+async def health_check():
+    """Health check endpoint for GET requests"""
+    return {
+        'status': 'ok',
+        'message': 'Oracle is running',
+        'timestamp': datetime.utcnow().isoformat(),
+        'modules': {
+            'telegram': TELEGRAM_AVAILABLE,
+            'ml_predictor': ML_AVAILABLE,
+            'analytics': ANALYTICS_AVAILABLE,
+            'portfolio': PORTFOLIO_AVAILABLE,
+            'flash_loan_protection': PROTECTION_AVAILABLE
+        }
+    }
+
+
+@app.head('/')
+async def health_check_head():
+    """Health check endpoint for HEAD requests"""
+    return {}
+
+
+# ============================================================================
+# STARTUP EVENT
+# ============================================================================
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the trading bot on startup"""
+    logger.info("=" * 60)
+    logger.info("🔮 Oracle Trading Bot Starting...")
+    logger.info("=" * 60)
+    
+    # Log module availability
+    logger.info(f"Telegram Alerts: {'✓' if TELEGRAM_AVAILABLE else '✗'}")
+    logger.info(f"ML Predictor: {'✓' if ML_AVAILABLE else '✗'}")
+    logger.info(f"Analytics: {'✓' if ANALYTICS_AVAILABLE else '✗'}")
+    logger.info(f"Portfolio: {'✓' if PORTFOLIO_AVAILABLE else '✗'}")
+    logger.info(f"Flash Loan Protection: {'✓' if PROTECTION_AVAILABLE else '✗'}")
+    
+    logger.info("=" * 60)
+    logger.info("🚀 Oracle awakened – startup complete")
+    logger.info("=" * 60)
+    
+    # Send startup alert if available
+    if TELEGRAM_AVAILABLE:
+        send_alert("🔮 Oracle Trading Bot Started Successfully")
+
+
+# ============================================================================
+# API ENDPOINTS
+# ============================================================================
+
+@app.get('/status')
+async def get_status():
+    """Get detailed system status"""
+    return {
+        'status': 'operational',
+        'timestamp': datetime.utcnow().isoformat(),
+        'modules': {
+            'telegram': TELEGRAM_AVAILABLE,
+            'ml_predictor': ML_AVAILABLE,
+            'analytics': ANALYTICS_AVAILABLE,
+            'portfolio': PORTFOLIO_AVAILABLE,
+            'flash_loan_protection': PROTECTION_AVAILABLE
+        },
+        'environment': {
+            'python_version': os.sys.version,
+            'render_instance': os.getenv('RENDER_INSTANCE_ID', 'local')
+        }
+    }
+
+
+@app.get('/portfolio')
+async def get_portfolio():
+    """Get current portfolio status"""
+    if not PORTFOLIO_AVAILABLE or portfolio is None:
+        return JSONResponse(
+            status_code=503,
+            content={'error': 'Portfolio manager not available'}
+        )
+    
+    try:
+        return {
+            'total_value': portfolio.get_total_value(),
+            'positions': portfolio.get_positions(),
+            'pnl': portfolio.get_total_pnl()
+        }
+    except Exception as e:
+        logger.error(f"Error getting portfolio: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)}
+        )
+
+
+@app.post('/predict')
+async def predict(request: Request):
+    """Get ML prediction for a symbol"""
+    if not ML_AVAILABLE or predictor is None:
+        return JSONResponse(
+            status_code=503,
+            content={'error': 'ML predictor not available'}
+        )
+    
+    try:
+        data = await request.json()
+        symbol = data.get('symbol', 'BTC/USDT')
+        
+        prediction = predictor.predict(symbol)
+        
+        # Log the prediction
+        if ANALYTICS_AVAILABLE:
+            analytics_logger.log_signal(
+                symbol=symbol,
+                signal_type='ml_prediction',
+                strength=prediction.get('confidence', 0.0)
+            )
+        
+        return prediction
+        
+    except Exception as e:
+        logger.error(f"Error making prediction: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)}
+        )
+
+
+@app.get('/analytics/events')
+async def get_events(event_type: str = None, limit: int = 100):
+    """Get analytics events"""
+    if not ANALYTICS_AVAILABLE:
+        return JSONResponse(
+            status_code=503,
+            content={'error': 'Analytics not available'}
+        )
+    
+    try:
+        events = analytics_logger.get_events(event_type=event_type, limit=limit)
+        return {'events': events, 'count': len(events)}
+    except Exception as e:
+        logger.error(f"Error getting events: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)}
+        )
+
+
+@app.get('/security/flash-loan-check')
+async def flash_loan_check(request: Request):
+    """Check for flash loan attacks"""
+    if not PROTECTION_AVAILABLE or flash_loan_protector is None:
+        return JSONResponse(
+            status_code=503,
+            content={'error': 'Flash loan protection not available'}
+        )
+    
+    try:
+        data = await request.json() if request.method == 'POST' else {}
+        symbol = data.get('symbol', 'BTC/USDT')
+        
+        is_safe = flash_loan_protector.check_market_manipulation(symbol)
+        
+        return {
+            'symbol': symbol,
+            'safe': is_safe,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking flash loan: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)}
+        )
+
+
+# ============================================================================
+# ERROR HANDLERS
+# ============================================================================
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    """Handle 404 errors"""
+    return JSONResponse(
+        status_code=404,
+        content={
+            'error': 'Not Found',
+            'path': str(request.url.path)
+        }
+    )
+
+
+@app.exception_handler(500)
+async def internal_error_handler(request: Request, exc):
+    """Handle 500 errors"""
+    logger.error(f"Internal error: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            'error': 'Internal Server Error',
+            'message': str(exc)
+        }
+    )
+
+
+# ============================================================================
+# MAIN ENTRY POINT
+# ============================================================================
+
+if __name__ == '__main__':
+    import uvicorn
+    
+    port = int(os.getenv('PORT', 8000))
+    
+    logger.info(f"Starting Oracle on port {port}")
+    
+    uvicorn.run(
+        app,
+        host='0.0.0.0',
+        port=port,
+        log_level='info'
+    )
