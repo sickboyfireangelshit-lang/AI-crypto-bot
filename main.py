@@ -270,3 +270,7 @@ try:
     from core.flash_arb import detect_cex_dex_spread, execute_flash_arb
 except Exception:
     detect_cex_dex_spread = execute_flash_arb = None
+@app.route('/', methods=['GET', 'HEAD'])
+def health_check():
+    """Health check endpoint for Render"""
+    return {'status': 'ok', 'message': 'Oracle is running'}, 200
