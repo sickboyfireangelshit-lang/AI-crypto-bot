@@ -1,5 +1,5 @@
 """Enhanced Analytics Logger Module - Production Ready"""
-
+from typing import Optional, Dict, Any, List
 import logging
 import json
 from datetime import datetime
@@ -21,6 +21,7 @@ class AnalyticsLogger:
     Thread-safe analytics event logger with optional persistence.
     Designed for trading systems: events are immutable once logged.
     """
+def log_event(self, event_type: str, data: Optional[Dict[str, Any]] = None):
 Analytics Logger Module
 """
 import logging
