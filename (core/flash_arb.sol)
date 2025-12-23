@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.10;
+
+import {FlashLoanSimpleReceiverBase} from "aave-v3-core/contracts/flashloan/base/FlashLoanSimpleReceiverBase.sol";
+import {IPoolAddressesProvider} from "aave-v3-core/contracts/interfaces/IPoolAddressesProvider.sol";
+import {IERC20} from "openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+
+contract FlashArbReceiver is FlashLoanSimpleReceiverBase {
+    address public owner;
+    address public developerWallet; // Your fee address
+    uint256 public feePercent = 5; // 5% on profit
+
+    IUniswapV2Router02 public uniswapRouter = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D); // Ethereum mainnet
+    IUniswapV2Router02 public sushiswapRouter = IUniswapV2Router02(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
+
+    constructor(IPoolAddressesProvider provider, address _developerWallet) FlashLoanSimpleReceiverBase(provider) {
+        owner = msg.sender;
+        developerWallet = _developerWallet;
+    }
+
+    function executeOperation(
+        address asset,
+        uint256 amount,
+        uint256 premium,
+        address initiator,
+        bytes calldata params
+    ) external override returns (bool) {
+        // Decode params: path for arb (e.g., tokenA -> WETH -> tokenB)
+        (address[] memory pathBuy, address[] memory pathSell) = abi.decode(params, (address[], address[]));
+
+        // Approve routers
+        IERC20(asset).approve(address(uniswapRouter), amount);
+
+        // Arb logic: Buy low on Sushi, sell high on Uni (example)
+        uniswapRouter.swapExactTokensForTokens(amount, 0, pathBuy, address(this), block.timestamp);
+        uint256 acquired = IERC20(pathBuy[pathBuy.length-1]).balanceOf(address(this));
+        IERC20(pathBuy[pathBuy.length-1]).approve(address(sushiswapRouter), acquired);
+        sushiswapRouter.swapExactTokensForTokens(acquired, 0, pathSell, address(this), block.timestamp);
+
+        // Repay: amount + premium
+        uint256 totalOwed = amount + premium;
+        IERC20(asset).approve(address(POOL), totalOwed);
+
+        // Extract 5% fee on profit
+        uint256 profit = IERC20(asset).balanceOf(address(this)) - totalOwed;
+        if (profit > 0) {
+            uint256 devFee = (profit * feePercent) / 100;
+            IERC20(asset).transfer(developerWallet, devFee);
+        }
+
+        return true; // Success
+    }
+
+    // External initiate function called by Python bot
+    function initiateFlashLoan(address asset, uint256 amount, bytes calldata params) external {
+        require(msg.sender == owner, "Only owner");
+        POOL.flashLoanSimple(address(this), asset, amount, params, 0);
+    }
+
+    // Withdraw leftovers
+    function withdraw(address token) external {
+        require(msg.sender == owner);
+        IERC20(token).transfer(owner, IERC20(token).balanceOf(address(this)));
+    }
+}
