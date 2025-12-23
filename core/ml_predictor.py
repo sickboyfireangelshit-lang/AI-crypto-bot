@@ -320,3 +320,24 @@ class MLPredictor:
         except Exception as e:
             logger.error(f"Evaluation failed: {e}")
             return None
+# In _safe_import() section – fix logger ordering + default
+logger = None  # Define early
+try:
+    from analytics.logger import logger as _l
+    logger = _l
+except Exception as e:
+    print(f"[WARN] analytics.logger unavailable: {e}")
+
+# Update ML warning path if needed
+try:
+    from core.ml_predictor import get_ml_signal as _gms  # Correct path
+    get_ml_signal = _gms
+except Exception as e:
+    print(f"[WARN] ML predictor not available: {e}")
+
+# Telegram → move to analytics/telegram.py if using previous version
+try:
+    from analytics.telegram import send_alert as _sa, send_startup_alert as _ssa
+    send_alert, send_startup_alert = _sa, _ssa
+except Exception as e:
+    print(f"[WARN] Telegram alerts not available: {e}")
