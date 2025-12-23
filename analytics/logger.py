@@ -237,3 +237,247 @@ analytics_logger(persist_path="data/analytics_$(date +%Y%m%d).jsonl")
 
 # Alias for convenience in small projects
 analytics_logger = _AnalyticsLoggerSingleton.get_instance
+"""
+Analytics Logger Module
+Handles event logging and metrics tracking for the trading bot
+"""
+import logging
+import json
+from datetime import datetime
+from typing import Optional, Dict, Any, List
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+
+
+class AnalyticsLogger:
+    """Logger for analytics events and metrics"""
+    
+    def __init__(self):
+        """Initialize the analytics logger"""
+        self.events = []
+        self.metrics = {}
+        logger.info("AnalyticsLogger initialized")
+    
+    def log_event(self, event_type: str, data: Optional[Dict[str, Any]] = None):
+        """
+        Log an analytics event
+        
+        Args:
+            event_type: Type of event (e.g., 'trade', 'signal', 'error')
+            data: Event data dictionary
+        """
+        event = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'event_type': event_type,
+            'data': data or {}
+        }
+        self.events.append(event)
+        logger.info(f"Event logged: {event_type}")
+        
+        # Keep only last 10000 events to prevent memory issues
+        if len(self.events) > 10000:
+            self.events = self.events[-5000:]
+    
+    def log_trade(self, symbol: str, action: str, quantity: float, price: float):
+        """
+        Log a trade event
+        
+        Args:
+            symbol: Trading symbol (e.g., 'BTC/USDT')
+            action: Trade action ('buy' or 'sell')
+            quantity: Amount traded
+            price: Execution price
+        """
+        self.log_event('trade', {
+            'symbol': symbol,
+            'action': action,
+            'quantity': quantity,
+            'price': price,
+            'value': quantity * price
+        })
+    
+    def log_signal(self, symbol: str, signal_type: str, strength: float):
+        """
+        Log a trading signal
+        
+        Args:
+            symbol: Trading symbol
+            signal_type: Type of signal (e.g., 'buy', 'sell', 'ml_prediction')
+            strength: Signal strength/confidence (0.0 to 1.0)
+        """
+        self.log_event('signal', {
+            'symbol': symbol,
+            'signal_type': signal_type,
+            'strength': strength
+        })
+    
+    def log_error(self, error_type: str, message: str, details: Optional[Dict] = None):
+        """
+        Log an error event
+        
+        Args:
+            error_type: Type of error
+            message: Error message
+            details: Additional error details
+        """
+        self.log_event('error', {
+            'error_type': error_type,
+            'message': message,
+            'details': details or {}
+        })
+        logger.error(f"{error_type}: {message}")
+    
+    def log_flash_loan_alert(self, symbol: str, anomaly_type: str, severity: str):
+        """
+        Log a flash loan detection alert
+        
+        Args:
+            symbol: Trading symbol
+            anomaly_type: Type of anomaly detected
+            severity: Severity level ('low', 'medium', 'high', 'critical')
+        """
+        self.log_event('flash_loan_alert', {
+            'symbol': symbol,
+            'anomaly_type': anomaly_type,
+            'severity': severity
+        })
+        logger.warning(f"Flash loan alert: {symbol} - {anomaly_type} ({severity})")
+    
+    def log_portfolio_update(self, total_value: float, pnl: float, positions: int):
+        """
+        Log a portfolio status update
+        
+        Args:
+            total_value: Total portfolio value
+            pnl: Profit and loss
+            positions: Number of open positions
+        """
+        self.log_event('portfolio_update', {
+            'total_value': total_value,
+            'pnl': pnl,
+            'positions': positions
+        })
+    
+    def get_events(self, event_type: Optional[str] = None, limit: int = 100) -> List[Dict]:
+        """
+        Get logged events
+        
+        Args:
+            event_type: Filter by event type (optional)
+            limit: Maximum number of events to return
+            
+        Returns:
+            List of event dictionaries
+        """
+        if event_type:
+            filtered = [e for e in self.events if e['event_type'] == event_type]
+            return filtered[-limit:]
+        return self.events[-limit:]
+    
+    def get_trade_stats(self) -> Dict[str, Any]:
+        """
+        Get trading statistics
+        
+        Returns:
+            Dictionary with trade statistics
+        """
+        trades = [e for e in self.events if e['event_type'] == 'trade']
+        
+        if not trades:
+            return {
+                'total_trades': 0,
+                'total_volume': 0.0,
+                'buy_trades': 0,
+                'sell_trades': 0
+            }
+        
+        buy_trades = [t for t in trades if t['data'].get('action') == 'buy']
+        sell_trades = [t for t in trades if t['data'].get('action') == 'sell']
+        
+        total_volume = sum(t['data'].get('value', 0.0) for t in trades)
+        
+        return {
+            'total_trades': len(trades),
+            'total_volume': total_volume,
+            'buy_trades': len(buy_trades),
+            'sell_trades': len(sell_trades),
+            'avg_trade_size': total_volume / len(trades) if trades else 0.0
+        }
+    
+    def get_signal_stats(self) -> Dict[str, Any]:
+        """
+        Get signal statistics
+        
+        Returns:
+            Dictionary with signal statistics
+        """
+        signals = [e for e in self.events if e['event_type'] == 'signal']
+        
+        if not signals:
+            return {
+                'total_signals': 0,
+                'avg_strength': 0.0
+            }
+        
+        strengths = [s['data'].get('strength', 0.0) for s in signals]
+        
+        return {
+            'total_signals': len(signals),
+            'avg_strength': sum(strengths) / len(strengths) if strengths else 0.0,
+            'max_strength': max(strengths) if strengths else 0.0,
+            'min_strength': min(strengths) if strengths else 0.0
+        }
+    
+    def clear_events(self):
+        """Clear all logged events"""
+        self.events = []
+        logger.info("Events cleared")
+    
+    def export_events(self, filepath: str, event_type: Optional[str] = None):
+        """
+        Export events to a JSON file
+        
+        Args:
+            filepath: Path to save the JSON file
+            event_type: Filter by event type (optional)
+        """
+        events = self.get_events(event_type=event_type, limit=None)
+        
+        try:
+            with open(filepath, 'w') as f:
+                json.dump(events, f, indent=2)
+            logger.info(f"Exported {len(events)} events to {filepath}")
+        except Exception as e:
+            logger.error(f"Error exporting events: {e}")
+            raise
+
+
+# Global analytics logger instance
+analytics_logger = AnalyticsLogger()
+
+
+# Helper functions for quick access
+def log_trade(symbol: str, action: str, quantity: float, price: float):
+    """Quick access to log trade"""
+    analytics_logger.log_trade(symbol, action, quantity, price)
+
+
+def log_signal(symbol: str, signal_type: str, strength: float):
+    """Quick access to log signal"""
+    analytics_logger.log_signal(symbol, signal_type, strength)
+
+
+def log_error(error_type: str, message: str, details: Optional[Dict] = None):
+    """Quick access to log error"""
+    analytics_logger.log_error(error_type, message, details)
+
+
+def log_flash_loan_alert(symbol: str, anomaly_type: str, severity: str):
+    """Quick access to log flash loan alert"""
+    analytics_logger.log_flash_loan_alert(symbol, anomaly_type, severity)
