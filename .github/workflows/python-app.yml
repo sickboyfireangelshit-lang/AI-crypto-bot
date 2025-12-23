@@ -37,3 +37,14 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+# Fix the files
+# Then commit and push:
+
+git add main.py
+git add analytics/logger.py
+git add utils/telegram_alerts.py
+git add data/__init__.py
+git add data/exchange.py
+
+git commit -m "Fix health_check function and syntax errors"
+git push origin main
