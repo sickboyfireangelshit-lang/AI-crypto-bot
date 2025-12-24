@@ -1,0 +1,107 @@
+import asyncio
+import aiohttp
+import alpaca_trade_api as tradeapi
+from datetime import datetime
+import logging
+
+# ==================== CONFIGURATION ====================
+# config.py or environment variables (recommended)
+BINANCE_BASE_URL = "https://api.binance.com"
+ALPACA_API_KEY = "YOUR_ALPACA_KEY"
+ALPACA_SECRET_KEY = "YOUR_ALPACA_SECRET"
+ALPACA_BASE_URL = "https://paper-api.alpaca.markets"  # Change to live if ready
+
+SYMBOLS = ["BTC", "ETH", "SOL", "ADA", "DOT"]  # Add/remove as needed
+CHECK_INTERVAL = 2.0  # Seconds between cycles
+POSITION_SIZE_USD = 1000  # Fixed dollar amount per trade (adjust risk here)
+
+# ==================== ALPACA SETUP ====================
+alpaca = tradeapi.REST(ALPACA_API_KEY, ALPACA_SECRET_KEY, ALPACA_BASE_URL, api_version='v2')
+
+# ==================== ASYNC PRICE FETCHING ====================
+async def fetch_binance_price(session: aiohttp.ClientSession, symbol: str) -> tuple:
+    """
+    Fetch latest spot price for {symbol}USDT with minimal overhead.
+    Returns (symbol, price_float) or raises on error.
+    """
+    url = f"{BINANCE_BASE_URL}/api/v3/ticker/price"
+    params = {"symbol": f"{symbol}USDT"}
+    try:
+        async with session.get(url, params=params, timeout=10) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+            return symbol, float(data["price"])
+    except Exception as e:
+        logging.error(f"Binance fetch failed for {symbol}: {e}")
+        return symbol, None
+
+async def fetch_all_prices(symbols: list) -> dict:
+    """
+    Concurrently fetch prices for all symbols using persistent session.
+    Connection pooling + keep-alive = maximum throughput.
+    """
+    timeout = aiohttp.ClientTimeout(total=15)
+    connector = aiohttp.TCPConnector(limit_per_host=100, limit=200)
+    async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
+        tasks = [fetch_binance_price(session, sym) for sym in symbols]
+        results = await asyncio.gather(*tasks, return_exceptions=False)
+        return {sym: price for sym, price in results if price is not None}
+
+# ==================== RISK MANAGEMENT & STRATEGY ====================
+def calculate_position_quantity(price: float) -> int:
+    """
+    Simple fixed-dollar sizing. Can extend to Kelly, volatility-based, etc.
+    """
+    return max(1, int(POSITION_SIZE_USD / price))
+
+async def execute_trade(symbol: str, price: float, side: str):
+    """
+    Market order via Alpaca (paper or live).
+    """
+    qty = calculate_position_quantity(price)
+    try:
+        alpaca.submit_order(
+            symbol=symbol,
+            qty=qty,
+            side=side,
+            type='market',
+            time_in_force='gtc'
+        )
+        logging.info(f"{datetime.now()} | {side.upper()} {qty} {symbol} @ ~${price}")
+    except Exception as e:
+        logging.error(f"Order failed {symbol} {side}: {e}")
+
+def evaluate_strategy(prices: dict):
+    """
+    Placeholder for your actual strategy.
+    Example: simple price threshold or MA crossover.
+    Replace with your logic (RSI, EMA, ML model inference, etc.).
+    """
+    for symbol, price in prices.items():
+        # Dummy example: buy if price > 50000 for BTC only
+        if symbol == "BTC" and price > 50000:
+            asyncio.create_task(execute_trade(symbol, price, "buy"))
+        # Add stop-loss, take-profit, rebalancing, etc. here
+
+# ==================== MAIN LOOP ====================
+async def main_loop():
+    logging.basicConfig(level=logging.INFO)
+    logging.info("Ultra-low latency crypto trading bot STARTED")
+    
+    while True:
+        start_time = asyncio.get_event_loop().time()
+        
+        prices = await fetch_all_prices(SYMBOLS)
+        
+        if prices:
+            evaluate_strategy(prices)
+            logging.info(f"Fetched {len(prices)} prices in {asyncio.get_event_loop().time() - start_time:.3f}s")
+        
+        await asyncio.sleep(CHECK_INTERVAL)
+
+# ==================== ENTRY POINT ====================
+if __name__ == "__main__":
+    try:
+        asyncio.run(main_loop())
+    except KeyboardInterrupt:
+        logging.info("Bot stopped by user")
