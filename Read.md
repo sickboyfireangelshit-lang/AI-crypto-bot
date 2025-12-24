@@ -1,3 +1,4 @@
+[![CI](https://github.com/sickboyfireangelshit-lang/AI-crypto-bot/actions/workflows/python-app.yml/badge.svg)](https://github.com/sickboyfireangelshit-lang/AI-crypto-bot/actions/workflows/python-app.yml)
 🚀 Live Bot Status
 
 
