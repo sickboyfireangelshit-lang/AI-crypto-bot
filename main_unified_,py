@@ -123,7 +123,7 @@ def require_admin(request: Request):
     """Require admin secret in headers"""
     admin_secret = os.getenv("ADMIN_SECRET", "")
     provided = request.headers.get("X-Admin-Secret", "")
-    if provided != admin_secret:
+    if not admin_secret or provided != admin_secret:
         raise HTTPException(status_code=403, detail="Admin access denied")
 
 def generate_api_key(prefix: str = "sk_live_") -> str:
