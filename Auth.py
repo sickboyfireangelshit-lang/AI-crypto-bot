@@ -43,5 +43,5 @@ def require_api_key():
 
 def require_admin():
     secret = request.headers.get("X-Admin-Secret")
-    if secret != ADMIN_SECRET:
+    if not ADMIN_SECRET or secret != ADMIN_SECRET:
         abort(403, description="Admin access denied")
