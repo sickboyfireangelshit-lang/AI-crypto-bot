@@ -11,8 +11,8 @@ except ImportError:
     TelegramError = None
 
 # Config – Render env vars (add these in dashboard)
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+TELEGRAM_BOT_TOKEN = os.getenv("8144453170:AAG-VUiaO0EuNejPvE7X1Hlm4_ghbobWToI")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID\https://web.telegram.org/a/#93372553)
 
 # Lazy bot init – resilient even if creds missing
 _bot: Optional[Bot] = None
